@@ -11,21 +11,15 @@ import { customModel } from '@/lib/ai';
 import { models, reasoningModels } from '@/lib/ai/models';
 import { rateLimiter } from '@/lib/rate-limit';
 import {
-  codePrompt,
   systemPrompt,
-  updateDocumentPrompt,
 } from '@/lib/ai/prompts';
 import {
   deleteChatById,
   getChatById,
-  getDocumentById,
   getUser,
   saveChat,
-  saveDocument,
   saveMessages,
-  saveSuggestions,
 } from '@/lib/db/queries';
-import type { Suggestion } from '@/lib/db/schema';
 import {
   generateUUID,
   getMostRecentUserMessage,
@@ -55,7 +49,7 @@ const app = new FirecrawlApp({
 
 export async function POST(request: Request) {
   const maxDuration = process.env.MAX_DURATION
-    ? parseInt(process.env.MAX_DURATION)
+    ? Number.parseInt(process.env.MAX_DURATION)
     : 300; 
   
   const {
@@ -380,7 +374,7 @@ export async function POST(request: Request) {
                       },
                     });
                     break;
-                  case 'error':
+                  case 'error': {
                     // After yielding 'error', the generator returns immediately with
                     // partial DeepResearchResult. One more .next() retrieves it.
                     const errorNext = await generator.next();
@@ -394,6 +388,7 @@ export async function POST(request: Request) {
                         totalSteps: partial?.totalSteps ?? 0,
                       },
                     };
+                  }
                 }
               }
             },
