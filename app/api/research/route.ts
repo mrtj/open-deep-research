@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { runDeepResearch, type DeepResearchEvent, type DeepResearchResult } from '@/lib/ai/deep-research';
+import { timingSafeEqual } from 'crypto';
+import { runDeepResearch, type DeepResearchResult } from '@/lib/ai/deep-research';
 
 const DEFAULT_MODEL_ID = 'gpt-4o';
 const DEFAULT_REASONING_MODEL_ID = process.env.REASONING_MODEL || 'o1-mini';
@@ -15,8 +16,19 @@ function validateAuth(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   if (!authHeader) return false;
 
-  const [scheme, token] = authHeader.split(' ');
-  return scheme === 'Bearer' && token === apiKey;
+  const spaceIndex = authHeader.indexOf(' ');
+  if (spaceIndex === -1) return false;
+
+  const scheme = authHeader.slice(0, spaceIndex);
+  const token = authHeader.slice(spaceIndex + 1);
+
+  if (scheme !== 'Bearer') return false;
+
+  // Timing-safe comparison to prevent timing attacks
+  const tokenBuf = Buffer.from(token);
+  const apiKeyBuf = Buffer.from(apiKey);
+  if (tokenBuf.length !== apiKeyBuf.length) return false;
+  return timingSafeEqual(tokenBuf, apiKeyBuf);
 }
 
 export async function POST(request: NextRequest) {
