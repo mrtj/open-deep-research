@@ -335,7 +335,7 @@ export async function* runDeepResearch(
 
 - [ ] **Step 2: Verify the file compiles**
 
-Run: `cd /Users/janos/Projects/github/nickscamara/open-deep-research && npx tsc --noEmit lib/ai/deep-research.ts 2>&1 | head -20`
+Run: `npx tsc --noEmit lib/ai/deep-research.ts 2>&1 | head -20`
 
 Fix any type errors. The likely issues:
 - Firecrawl `search()` return types — may need `as any` casts matching the existing code
@@ -464,7 +464,7 @@ Also remove the now-unused `FirecrawlApp` instantiation at line 52-54 (the `cons
 
 - [ ] **Step 2: Verify the app builds**
 
-Run: `cd /Users/janos/Projects/github/nickscamara/open-deep-research && pnpm build 2>&1 | tail -20`
+Run: `pnpm build 2>&1 | tail -20`
 
 Fix any build errors.
 
@@ -640,7 +640,7 @@ async function bufferedResponse(params: Parameters<typeof runDeepResearch>[0]) {
 
 - [ ] **Step 2: Verify the app builds**
 
-Run: `cd /Users/janos/Projects/github/nickscamara/open-deep-research && pnpm build 2>&1 | tail -20`
+Run: `pnpm build 2>&1 | tail -20`
 
 Fix any build errors.
 

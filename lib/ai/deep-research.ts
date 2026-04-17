@@ -5,8 +5,6 @@ import { customModel } from '@/lib/ai';
 export interface DeepResearchParams {
   topic: string;
   maxDepth?: number;
-  /** Currently unused; reserved for future non-reasoning steps. */
-  modelId?: string;
   reasoningModelId: string;
   firecrawlApiKey: string;
 }

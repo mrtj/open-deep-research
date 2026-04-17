@@ -1,39 +1,45 @@
 import { NextRequest } from 'next/server';
-import { timingSafeEqual } from 'crypto';
+import { createHmac } from 'crypto';
 import { runDeepResearch, type DeepResearchResult } from '@/lib/ai/deep-research';
 
-const DEFAULT_MODEL_ID = 'gpt-4o';
 const DEFAULT_REASONING_MODEL_ID = process.env.REASONING_MODEL || 'o1-mini';
 
-function unauthorized() {
-  return Response.json({ error: 'Missing or invalid Authorization header. Expected: Bearer <API_KEY>' }, { status: 401 });
-}
-
-function validateAuth(request: NextRequest): boolean {
+function validateAuth(request: NextRequest): 'ok' | 'no-key' | 'bad-token' {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) return false;
+  if (!apiKey) return 'no-key';
 
   const authHeader = request.headers.get('authorization');
-  if (!authHeader) return false;
+  if (!authHeader) return 'bad-token';
 
   const spaceIndex = authHeader.indexOf(' ');
-  if (spaceIndex === -1) return false;
+  if (spaceIndex === -1) return 'bad-token';
 
   const scheme = authHeader.slice(0, spaceIndex);
   const token = authHeader.slice(spaceIndex + 1);
 
-  if (scheme !== 'Bearer') return false;
+  if (scheme.toLowerCase() !== 'bearer') return 'bad-token';
 
-  // Timing-safe comparison to prevent timing attacks
-  const tokenBuf = Buffer.from(token);
-  const apiKeyBuf = Buffer.from(apiKey);
-  if (tokenBuf.length !== apiKeyBuf.length) return false;
-  return timingSafeEqual(tokenBuf, apiKeyBuf);
+  // HMAC both values to get fixed-length digests, avoiding length leaks
+  const hmacKey = 'open-deep-research-auth';
+  const tokenDigest = createHmac('sha256', hmacKey).update(token).digest();
+  const apiKeyDigest = createHmac('sha256', hmacKey).update(apiKey).digest();
+  const match = tokenDigest.every((b, i) => b === apiKeyDigest[i]);
+  return match ? 'ok' : 'bad-token';
 }
 
 export async function POST(request: NextRequest) {
-  if (!validateAuth(request)) {
-    return unauthorized();
+  const authResult = validateAuth(request);
+  if (authResult === 'no-key') {
+    return Response.json(
+      { error: 'API_KEY environment variable not configured on server' },
+      { status: 500 },
+    );
+  }
+  if (authResult === 'bad-token') {
+    return Response.json(
+      { error: 'Missing or invalid Authorization header. Expected: Bearer <API_KEY>' },
+      { status: 401 },
+    );
   }
 
   const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
@@ -41,14 +47,14 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'FIRECRAWL_API_KEY not configured on server' }, { status: 500 });
   }
 
-  let body: { topic?: string; maxDepth?: number; modelId?: string; reasoningModelId?: string };
+  let body: { topic?: string; maxDepth?: number; reasoningModelId?: string };
   try {
     body = await request.json();
   } catch {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { topic, maxDepth, modelId, reasoningModelId } = body;
+  const { topic, maxDepth, reasoningModelId } = body;
 
   if (!topic || typeof topic !== 'string') {
     return Response.json({ error: 'Missing required field: topic' }, { status: 400 });
@@ -61,7 +67,6 @@ export async function POST(request: NextRequest) {
   const params = {
     topic,
     maxDepth: maxDepth ?? 7,
-    modelId: modelId ?? DEFAULT_MODEL_ID,
     reasoningModelId: reasoningModelId ?? DEFAULT_REASONING_MODEL_ID,
     firecrawlApiKey,
   };
@@ -81,9 +86,8 @@ function streamingResponse(params: Parameters<typeof runDeepResearch>[0]) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      const generator = runDeepResearch(params);
       try {
-        const generator = runDeepResearch(params);
-
         while (true) {
           const { value, done } = await generator.next();
 
@@ -104,10 +108,35 @@ function streamingResponse(params: Parameters<typeof runDeepResearch>[0]) {
             return;
           }
 
+          // On error event, drain generator for partial results and close
+          if (value.type === 'error') {
+            const next = await generator.next();
+            const partial = next.done
+              ? (next.value as DeepResearchResult)
+              : undefined;
+            const errorLine = JSON.stringify({
+              type: 'error',
+              message: value.message,
+              findings: partial?.findings ?? [],
+              metadata: {
+                maxDepth: params.maxDepth,
+                durationMs: Date.now() - startTime,
+                steps: partial?.completedSteps ?? 0,
+              },
+            });
+            controller.enqueue(encoder.encode(errorLine + '\n'));
+            controller.close();
+            return;
+          }
+
           controller.enqueue(encoder.encode(JSON.stringify(value) + '\n'));
         }
       } catch (error: any) {
-        const errorLine = JSON.stringify({ type: 'error', message: error?.message ?? 'Unknown error' });
+        await generator.return(undefined as any);
+        const errorLine = JSON.stringify({
+          type: 'error',
+          message: error?.message ?? 'Unknown error',
+        });
         controller.enqueue(encoder.encode(errorLine + '\n'));
         controller.close();
       }
@@ -126,10 +155,9 @@ function streamingResponse(params: Parameters<typeof runDeepResearch>[0]) {
 async function bufferedResponse(params: Parameters<typeof runDeepResearch>[0]) {
   const startTime = Date.now();
   const sources: Array<{ title: string; url: string }> = [];
+  const generator = runDeepResearch(params);
 
   try {
-    const generator = runDeepResearch(params);
-
     while (true) {
       const { value, done } = await generator.next();
 
@@ -152,6 +180,10 @@ async function bufferedResponse(params: Parameters<typeof runDeepResearch>[0]) {
       }
     }
   } catch (error: any) {
-    return Response.json({ error: error?.message ?? 'Unknown error' }, { status: 500 });
+    await generator.return(undefined as any);
+    return Response.json(
+      { error: error?.message ?? 'Unknown error' },
+      { status: 500 },
+    );
   }
 }
