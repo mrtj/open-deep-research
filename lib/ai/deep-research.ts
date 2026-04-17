@@ -5,7 +5,8 @@ import { customModel } from '@/lib/ai';
 export interface DeepResearchParams {
   topic: string;
   maxDepth?: number;
-  modelId: string;
+  /** Currently unused; reserved for future non-reasoning steps. */
+  modelId?: string;
   reasoningModelId: string;
   firecrawlApiKey: string;
 }
@@ -113,7 +114,7 @@ export async function* runDeepResearch(
 
       const result = await generateText({
         model: customModel(reasoningModelId, true),
-        prompt: `You are a research agent analyzing findings about: ${topic}
+        prompt: `You are a research agent analyzing findings about: ${originalTopic}
                 You have ${timeRemainingMinutes} minutes remaining to complete the research but you don't need to use all of it.
                 Current findings: ${findings
                   .map((f) => `[From ${f.source}]: ${f.text}`)
@@ -154,7 +155,7 @@ export async function* runDeepResearch(
     const extractPromises = urls.map(async (url) => {
       try {
         const result = await (app as any).extract([url], {
-          prompt: `Extract key information about ${topic}. Focus on facts, data, and expert opinions. Analysis should be full of details and very comprehensive.`,
+          prompt: `Extract key information about ${originalTopic}. Focus on facts, data, and expert opinions. Analysis should be full of details and very comprehensive.`,
         });
 
         if (result.success) {
@@ -243,16 +244,17 @@ export async function* runDeepResearch(
         .slice(0, 3)
         .map((result: any) => result.url);
 
+      const urlsToExtract = [researchState.urlToSearch, ...topUrls].filter(
+        Boolean,
+      );
+
       yield makeActivity(
         'extract',
         'pending',
-        `Extracting content from ${topUrls.length + 1} sources`,
+        `Extracting content from ${urlsToExtract.length} sources`,
       );
 
-      const newFindings = await extractFromUrls([
-        researchState.urlToSearch,
-        ...topUrls,
-      ]);
+      const newFindings = await extractFromUrls(urlsToExtract);
       researchState.findings.push(...newFindings);
 
       yield makeActivity(
@@ -269,7 +271,6 @@ export async function* runDeepResearch(
       researchState.urlToSearch = analysis?.urlToSearch || '';
       researchState.summaries.push(analysis?.summary || '');
 
-      console.log(analysis);
       if (!analysis) {
         yield makeActivity(
           'analyze',
