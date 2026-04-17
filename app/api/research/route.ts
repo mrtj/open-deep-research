@@ -1,5 +1,5 @@
-import { NextRequest } from 'next/server';
-import { createHmac } from 'crypto';
+import type { NextRequest } from 'next/server';
+import { createHmac } from 'node:crypto';
 import { runDeepResearch, type DeepResearchResult } from '@/lib/ai/deep-research';
 
 const DEFAULT_REASONING_MODEL_ID = process.env.REASONING_MODEL || 'o1-mini';
@@ -103,7 +103,7 @@ function streamingResponse(params: Parameters<typeof runDeepResearch>[0]) {
                 steps: result.completedSteps,
               },
             });
-            controller.enqueue(encoder.encode(finalLine + '\n'));
+            controller.enqueue(encoder.encode(`${finalLine}\n`));
             controller.close();
             return;
           }
@@ -124,12 +124,12 @@ function streamingResponse(params: Parameters<typeof runDeepResearch>[0]) {
                 steps: partial?.completedSteps ?? 0,
               },
             });
-            controller.enqueue(encoder.encode(errorLine + '\n'));
+            controller.enqueue(encoder.encode(`${errorLine}\n`));
             controller.close();
             return;
           }
 
-          controller.enqueue(encoder.encode(JSON.stringify(value) + '\n'));
+          controller.enqueue(encoder.encode(`${JSON.stringify(value)}\n`));
         }
       } catch (error: any) {
         await generator.return(undefined as any);
@@ -137,7 +137,7 @@ function streamingResponse(params: Parameters<typeof runDeepResearch>[0]) {
           type: 'error',
           message: error?.message ?? 'Unknown error',
         });
-        controller.enqueue(encoder.encode(errorLine + '\n'));
+        controller.enqueue(encoder.encode(`${errorLine}\n`));
         controller.close();
       }
     },
