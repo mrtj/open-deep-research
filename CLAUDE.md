@@ -53,7 +53,7 @@ Upstash Redis sliding window: 5 requests / 60 seconds per user.
 
 **Optional:** `OPENROUTER_API_KEY`, `TOGETHER_API_KEY`, `BLOB_READ_WRITE_TOKEN`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
 
-**Config:** `REASONING_MODEL` (default: o1-mini), `BYPASS_JSON_VALIDATION` (for non-OpenAI models), `MAX_DURATION` (serverless timeout, default 300s)
+**Config:** `REASONING_MODEL` (default: o1-mini), `BYPASS_JSON_VALIDATION` (for non-OpenAI models), `MAX_DURATION` (serverless timeout, default 300s), `API_KEY` (bearer token for `/api/research` endpoint)
 
 ## Conventions
 
@@ -62,3 +62,23 @@ Upstash Redis sliding window: 5 requests / 60 seconds per user.
 - Server/client split: `"use client"` for frontend components, `"server-only"` for backend logic.
 - Message content is stored as JSON in the database with tool invocation tracking.
 - Only gpt-4o/gpt-4o-mini natively support JSON schema output; other models need `BYPASS_JSON_VALIDATION=true`.
+
+## Standalone Research API
+
+`POST /api/research` — programmatic deep research endpoint (no session required).
+
+```bash
+# Streaming (NDJSON)
+curl -N -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"topic": "quantum computing advances 2025", "maxDepth": 3}' \
+  http://localhost:3000/api/research
+
+# Non-streaming
+curl -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"topic": "quantum computing advances 2025", "maxDepth": 3}' \
+  'http://localhost:3000/api/research?stream=false'
+```
+
+Body: `{ topic, maxDepth?, modelId?, reasoningModelId? }`. Model IDs are free-form strings routed via the same provider logic as the chat endpoint.
