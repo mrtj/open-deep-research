@@ -329,6 +329,11 @@ export async function* runDeepResearch(
       `Research failed: ${error.message}`,
     );
 
+    yield {
+      type: 'error' as const,
+      message: error.message,
+    };
+
     return {
       findings: researchState.findings,
       analysis: '',

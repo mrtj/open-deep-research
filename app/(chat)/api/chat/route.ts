@@ -2,9 +2,6 @@ import {
   type Message,
   convertToCoreMessages,
   createDataStreamResponse,
-  generateObject,
-  generateText,
-  streamObject,
   streamText,
 } from 'ai';
 import { z } from 'zod';
@@ -385,10 +382,18 @@ export async function POST(request: Request) {
                     });
                     break;
                   case 'error':
+                    // Generator yields 'error' before returning partial results on the
+                    // next iteration.  Drain it so we can include partial findings.
+                    const errorNext = await generator.next();
+                    const partial = errorNext.done ? errorNext.value : undefined;
                     return {
                       success: false,
                       error: event.message,
-                      data: { findings: [], completedSteps: 0, totalSteps: 0 },
+                      data: {
+                        findings: partial?.findings ?? [],
+                        completedSteps: partial?.completedSteps ?? 0,
+                        totalSteps: partial?.totalSteps ?? 0,
+                      },
                     };
                 }
               }
