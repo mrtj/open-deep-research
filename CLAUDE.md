@@ -81,4 +81,4 @@ curl -H "Authorization: Bearer $API_KEY" \
   'http://localhost:3000/api/research?stream=false'
 ```
 
-Body: `{ topic, maxDepth?, modelId?, reasoningModelId? }`. Model IDs are free-form strings routed via the same provider logic as the chat endpoint.
+Body: `{ topic, maxDepth?, reasoningModelId? }`. Model IDs are free-form strings routed via the same provider logic as the chat endpoint.

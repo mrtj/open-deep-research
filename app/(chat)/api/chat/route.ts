@@ -317,7 +317,6 @@ export async function POST(request: Request) {
               const generator = runDeepResearch({
                 topic,
                 maxDepth,
-                modelId: model.apiIdentifier,
                 reasoningModelId: reasoningModel.apiIdentifier,
                 firecrawlApiKey: process.env.FIRECRAWL_API_KEY || '',
               });
@@ -382,8 +381,8 @@ export async function POST(request: Request) {
                     });
                     break;
                   case 'error':
-                    // Generator yields 'error' before returning partial results on the
-                    // next iteration.  Drain it so we can include partial findings.
+                    // After yielding 'error', the generator returns immediately with
+                    // partial DeepResearchResult. One more .next() retrieves it.
                     const errorNext = await generator.next();
                     const partial = errorNext.done ? errorNext.value : undefined;
                     return {

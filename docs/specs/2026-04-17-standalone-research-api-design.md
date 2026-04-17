@@ -66,7 +66,6 @@ POST /api/research?stream=false
 {
   "topic": "string",
   "maxDepth": 7,
-  "modelId": "gpt-4o",
   "reasoningModelId": "o3-mini"
 }
 ```
@@ -75,7 +74,6 @@ POST /api/research?stream=false
 |-------|----------|---------|
 | `topic` | yes | - |
 | `maxDepth` | no | 7 |
-| `modelId` | no | `gpt-4o` |
 | `reasoningModelId` | no | `REASONING_MODEL` env var, or `o1-mini` |
 
 Model IDs are free-form strings (no validation against a hardcoded list). This allows benchmarking arbitrary OpenRouter models without code changes. Invalid IDs fail at the provider level with a descriptive error.
@@ -130,8 +128,8 @@ Standard JSON error responses:
 
 ## 3. Model Resolution
 
-1. If `modelId` / `reasoningModelId` provided in request body, use those
-2. Otherwise fall back to defaults: `gpt-4o` for router, `REASONING_MODEL` env var (or `o1-mini`) for reasoning
+1. If `reasoningModelId` provided in request body, use it
+2. Otherwise fall back to `REASONING_MODEL` env var (or `o1-mini`)
 
 Provider routing via existing `customModel()` in `lib/ai/index.ts`: OpenRouter (if `OPENROUTER_API_KEY` set) > TogetherAI (for DeepSeek) > OpenAI.
 
