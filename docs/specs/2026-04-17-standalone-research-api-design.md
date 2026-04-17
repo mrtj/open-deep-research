@@ -92,7 +92,7 @@ Each line is a JSON object — one of the `DeepResearchEvent` types during resea
 {"type":"source","title":"...","url":"..."}
 {"type":"depth","current":2,"max":7}
 ...
-{"type":"result","findings":[{"text":"...","source":"..."}],"analysis":"...","metadata":{"depth":5,"durationMs":142000,"steps":15}}
+{"type":"result","findings":[{"text":"...","source":"..."}],"analysis":"...","metadata":{"maxDepth":5,"durationMs":142000,"steps":15}}
 ```
 
 ### Non-Streaming Response (`?stream=false`)
@@ -107,7 +107,7 @@ Buffers all events internally, returns a single JSON object when research comple
   "analysis": "...",
   "sources": [{ "title": "...", "url": "..." }],
   "metadata": {
-    "depth": 5,
+    "maxDepth": 5,
     "durationMs": 142000,
     "steps": 15
   }

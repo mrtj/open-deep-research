@@ -94,7 +94,7 @@ function streamingResponse(params: Parameters<typeof runDeepResearch>[0]) {
               findings: result.findings,
               analysis: result.analysis,
               metadata: {
-                depth: params.maxDepth,
+                maxDepth: params.maxDepth,
                 durationMs: Date.now() - startTime,
                 steps: result.completedSteps,
               },
@@ -107,7 +107,7 @@ function streamingResponse(params: Parameters<typeof runDeepResearch>[0]) {
           controller.enqueue(encoder.encode(JSON.stringify(value) + '\n'));
         }
       } catch (error: any) {
-        const errorLine = JSON.stringify({ type: 'error', message: error.message });
+        const errorLine = JSON.stringify({ type: 'error', message: error?.message ?? 'Unknown error' });
         controller.enqueue(encoder.encode(errorLine + '\n'));
         controller.close();
       }
@@ -140,7 +140,7 @@ async function bufferedResponse(params: Parameters<typeof runDeepResearch>[0]) {
           analysis: result.analysis,
           sources,
           metadata: {
-            depth: params.maxDepth,
+            maxDepth: params.maxDepth,
             durationMs: Date.now() - startTime,
             steps: result.completedSteps,
           },
@@ -152,6 +152,6 @@ async function bufferedResponse(params: Parameters<typeof runDeepResearch>[0]) {
       }
     }
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error?.message ?? 'Unknown error' }, { status: 500 });
   }
 }
