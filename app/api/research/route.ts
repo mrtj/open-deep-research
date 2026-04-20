@@ -47,6 +47,11 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'FIRECRAWL_API_KEY not configured on server' }, { status: 500 });
   }
 
+  const serperApiKey = process.env.SERPER_API_KEY;
+  if (!serperApiKey) {
+    return Response.json({ error: 'SERPER_API_KEY not configured on server' }, { status: 500 });
+  }
+
   let body: { topic?: string; maxDepth?: number; reasoningModelId?: string };
   try {
     body = await request.json();
@@ -69,6 +74,7 @@ export async function POST(request: NextRequest) {
     maxDepth: maxDepth ?? 7,
     reasoningModelId: reasoningModelId ?? DEFAULT_REASONING_MODEL_ID,
     firecrawlApiKey,
+    serperApiKey,
   };
 
   const streamParam = request.nextUrl.searchParams.get('stream');

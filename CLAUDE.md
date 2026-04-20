@@ -49,7 +49,7 @@ Upstash Redis sliding window: 5 requests / 60 seconds per user.
 
 ## Environment Variables
 
-**Required:** `OPENAI_API_KEY`, `FIRECRAWL_API_KEY`, `AUTH_SECRET`, `POSTGRES_URL`
+**Required:** `OPENAI_API_KEY`, `FIRECRAWL_API_KEY`, `SERPER_API_KEY`, `AUTH_SECRET`, `POSTGRES_URL`
 
 **Optional:** `OPENROUTER_API_KEY`, `TOGETHER_API_KEY`, `BLOB_READ_WRITE_TOKEN`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
 
