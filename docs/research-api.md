@@ -8,7 +8,6 @@ Set these environment variables on the server:
 
 ```bash
 API_KEY=your-secret-key          # Bearer token for authentication
-FIRECRAWL_API_KEY=fc-...         # Firecrawl API key for page extraction
 SERPER_API_KEY=...               # Serper API key for web search
 OPENAI_API_KEY=sk-...            # Required if using OpenAI models
 OPENROUTER_API_KEY=sk-or-...     # Optional: routes all models through OpenRouter
@@ -160,7 +159,7 @@ Note: non-streaming mode includes a `sources` array (collected from all discover
 |--------|-------|
 | 400 | Missing `topic`, invalid JSON, `maxDepth` out of range |
 | 401 | Missing or invalid `Authorization` header |
-| 500 | `API_KEY`, `FIRECRAWL_API_KEY`, or `SERPER_API_KEY` not configured, provider error |
+| 500 | `API_KEY` or `SERPER_API_KEY` not configured, provider error |
 
 All errors return JSON:
 
