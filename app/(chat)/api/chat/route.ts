@@ -27,9 +27,9 @@ import {
 } from '@/lib/utils';
 
 import { generateTitleFromUserMessage } from '../../actions';
-import FirecrawlApp from '@mendable/firecrawl-js';
 import { runDeepResearch } from '@/lib/ai/deep-research';
 import { serperSearch } from '@/lib/search';
+import { extractPageContent, extractWithPrompt } from '@/lib/extract';
 
 type AllowedTools =
   | 'deepResearch'
@@ -38,13 +38,9 @@ type AllowedTools =
   | 'scrape';
 
 
-const firecrawlTools: AllowedTools[] = ['search', 'extract', 'scrape'];
+const standardTools: AllowedTools[] = ['search', 'extract', 'scrape'];
 
-const allTools: AllowedTools[] = [...firecrawlTools, 'deepResearch'];
-
-const app = new FirecrawlApp({
-  apiKey: process.env.FIRECRAWL_API_KEY || '',
-});
+const allTools: AllowedTools[] = [...standardTools, 'deepResearch'];
 
 // const reasoningModel = customModel(process.env.REASONING_MODEL || 'o1-mini', true);
 
@@ -179,7 +175,7 @@ export async function POST(request: Request) {
         system: systemPrompt,
         messages: coreMessages,
         maxSteps: 10,
-        experimental_activeTools: experimental_deepResearch ? allTools : firecrawlTools,
+        experimental_activeTools: experimental_deepResearch ? allTools : standardTools,
         tools: {
           search: {
             description:
@@ -228,25 +224,26 @@ export async function POST(request: Request) {
             }),
             execute: async ({ urls, prompt }) => {
               try {
-                const scrapeResult = await app.extract(urls, {
-                  prompt,
-                });
+                const results = await Promise.all(
+                  urls.map((url: string) =>
+                    extractWithPrompt(url, prompt, reasoningModel.apiIdentifier),
+                  ),
+                );
 
-                if (!scrapeResult.success) {
+                const successful = results.filter((r) => r.success);
+                if (successful.length === 0) {
                   return {
-                    error: `Failed to extract data: ${scrapeResult.error}`,
+                    error: `Failed to extract data: ${results[0]?.error || 'unknown error'}`,
                     success: false,
                   };
                 }
 
                 return {
-                  data: scrapeResult.data,
+                  data: successful.map((r) => r.data),
                   success: true,
                 };
               } catch (error: any) {
                 console.error('Extraction error:', error);
-                console.error(error.message);
-                console.error(error.error);
                 return {
                   error: `Extraction failed: ${error.message}`,
                   success: false,
@@ -262,27 +259,23 @@ export async function POST(request: Request) {
             }),
             execute: async ({ url }: { url: string }) => {
               try {
-                const scrapeResult = await app.scrapeUrl(url);
+                const result = await extractPageContent(url);
 
-                if (!scrapeResult.success) {
+                if (!result.success) {
                   return {
-                    error: `Failed to extract data: ${scrapeResult.error}`,
+                    error: `Failed to scrape page: ${result.error}`,
                     success: false,
                   };
                 }
 
                 return {
-                  data:
-                    scrapeResult.markdown ??
-                    'Could get the page content, try using search or extract',
+                  data: result.content ?? 'Could not get the page content, try using search or extract',
                   success: true,
                 };
               } catch (error: any) {
-                console.error('Extraction error:', error);
-                console.error(error.message);
-                console.error(error.error);
+                console.error('Scrape error:', error);
                 return {
-                  error: `Extraction failed: ${error.message}`,
+                  error: `Scrape failed: ${error.message}`,
                   success: false,
                 };
               }
@@ -303,7 +296,6 @@ export async function POST(request: Request) {
                 topic,
                 maxDepth,
                 reasoningModelId: reasoningModel.apiIdentifier,
-                firecrawlApiKey: process.env.FIRECRAWL_API_KEY || '',
                 serperApiKey,
               });
 
