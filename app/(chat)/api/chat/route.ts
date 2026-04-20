@@ -29,6 +29,7 @@ import {
 import { generateTitleFromUserMessage } from '../../actions';
 import FirecrawlApp from '@mendable/firecrawl-js';
 import { runDeepResearch } from '@/lib/ai/deep-research';
+import { serperSearch } from '@/lib/search';
 
 type AllowedTools =
   | 'deepResearch'
@@ -193,37 +194,23 @@ export async function POST(request: Request) {
                 .describe('Maximum number of results to return (default 10)'),
             }),
             execute: async ({ query, maxResults = 5 }) => {
+              const serperApiKey = process.env.SERPER_API_KEY;
+              if (!serperApiKey) {
+                return { error: 'SERPER_API_KEY not configured', success: false };
+              }
               try {
-                const searchResult = await app.search(query);
-
+                const searchResult = await serperSearch(query, serperApiKey, maxResults);
                 if (!searchResult.success) {
-                  return {
-                    error: `Search failed: ${searchResult.error}`,
-                    success: false,
-                  };
+                  return { error: `Search failed: ${searchResult.error}`, success: false };
                 }
-
-                // Add favicon URLs to search results
-                const resultsWithFavicons = searchResult.data.map((result: any) => {
+                const resultsWithFavicons = searchResult.data.map((result) => {
                   const url = new URL(result.url);
                   const favicon = `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=32`;
-                  return {
-                    ...result,
-                    favicon
-                  };
+                  return { ...result, favicon };
                 });
-
-                searchResult.data = resultsWithFavicons;
-
-                return {
-                  data: searchResult.data,
-                  success: true,
-                };
+                return { data: resultsWithFavicons, success: true };
               } catch (error: any) {
-                return {
-                  error: `Search failed: ${error.message}`,
-                  success: false,
-                };
+                return { error: `Search failed: ${error.message}`, success: false };
               }
             },
           },
