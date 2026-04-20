@@ -47,7 +47,7 @@ export async function extractPageContent(
       return {
         success: true,
         content: article.textContent.trim(),
-        title: article.title,
+        title: article.title || undefined,
       };
     }
 
