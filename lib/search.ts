@@ -17,8 +17,11 @@ interface SerperOrganicResult {
 }
 
 interface SerperResponse {
-  organic: SerperOrganicResult[];
+  organic?: SerperOrganicResult[];
+  message?: string;
 }
+
+const SERPER_TIMEOUT_MS = 15_000;
 
 export async function serperSearch(
   query: string,
@@ -33,6 +36,7 @@ export async function serperSearch(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ q: query, num: maxResults }),
+      signal: AbortSignal.timeout(SERPER_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -46,7 +50,15 @@ export async function serperSearch(
 
     const json: SerperResponse = await response.json();
 
-    const data: SearchResult[] = (json.organic || []).map((r) => ({
+    if (!json.organic) {
+      return {
+        success: false,
+        data: [],
+        error: json.message || 'Serper returned no organic results',
+      };
+    }
+
+    const data: SearchResult[] = json.organic.map((r) => ({
       url: r.link,
       title: r.title,
       description: r.snippet,
@@ -54,10 +66,14 @@ export async function serperSearch(
 
     return { success: true, data };
   } catch (error: any) {
+    const message =
+      error?.name === 'TimeoutError'
+        ? `Serper search timed out after ${SERPER_TIMEOUT_MS}ms`
+        : `Serper search failed: ${error.message}`;
     return {
       success: false,
       data: [],
-      error: `Serper search failed: ${error.message}`,
+      error: message,
     };
   }
 }
