@@ -38,6 +38,14 @@ export async function extractPageContent(
       };
     }
 
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('text/') && !contentType.includes('application/xhtml')) {
+      return {
+        success: false,
+        error: `Unsupported content type for ${url}: ${contentType}`,
+      };
+    }
+
     const html = await response.text();
     const { document } = parseHTML(html);
 
@@ -47,7 +55,7 @@ export async function extractPageContent(
     if (article && article.textContent) {
       return {
         success: true,
-        content: article.textContent.trim(),
+        content: article.textContent.trim().slice(0, MAX_CONTENT_CHARS),
         title: article.title || undefined,
       };
     }
@@ -57,7 +65,7 @@ export async function extractPageContent(
     if (bodyText) {
       return {
         success: true,
-        content: bodyText,
+        content: bodyText.slice(0, MAX_CONTENT_CHARS),
         title: document.title || undefined,
       };
     }
@@ -88,7 +96,7 @@ export async function extractWithPrompt(
   try {
     const result = await generateText({
       model: customModel(modelId, true),
-      prompt: `${prompt}\n\nPage content from ${url}:\n\n${page.content.slice(0, MAX_CONTENT_CHARS)}`,
+      prompt: `${prompt}\n\nPage content from ${url}:\n\n${page.content}`,
     });
 
     return { success: true, data: result.text };
