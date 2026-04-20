@@ -300,6 +300,7 @@ export async function POST(request: Request) {
                 maxDepth,
                 reasoningModelId: reasoningModel.apiIdentifier,
                 firecrawlApiKey: process.env.FIRECRAWL_API_KEY || '',
+                serperApiKey: process.env.SERPER_API_KEY || '',
               });
 
               while (true) {
