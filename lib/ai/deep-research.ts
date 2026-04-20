@@ -1,13 +1,12 @@
-import FirecrawlApp from '@mendable/firecrawl-js';
 import { generateText } from 'ai';
 import { customModel } from '@/lib/ai';
+import { extractWithPrompt } from '@/lib/extract';
 import { serperSearch } from '@/lib/search';
 
 export interface DeepResearchParams {
   topic: string;
   maxDepth?: number;
   reasoningModelId: string;
-  firecrawlApiKey: string;
   serperApiKey: string;
 }
 
@@ -53,14 +52,11 @@ export async function* runDeepResearch(
     topic: initialTopic,
     maxDepth = 7,
     reasoningModelId,
-    firecrawlApiKey,
     serperApiKey,
   } = params;
 
   let topic = initialTopic;
   const originalTopic = initialTopic;
-
-  const app = new FirecrawlApp({ apiKey: firecrawlApiKey });
 
   const startTime = Date.now();
   const timeLimit = 4.5 * 60 * 1000; // 4 minutes 30 seconds
@@ -155,17 +151,13 @@ export async function* runDeepResearch(
   const extractFromUrls = async (urls: string[]) => {
     const extractPromises = urls.map(async (url) => {
       try {
-        const result = await (app as any).extract([url], {
-          prompt: `Extract key information about ${originalTopic}. Focus on facts, data, and expert opinions. Analysis should be full of details and very comprehensive.`,
-        });
+        const result = await extractWithPrompt(
+          url,
+          `Extract key information about ${originalTopic}. Focus on facts, data, and expert opinions. Analysis should be full of details and very comprehensive.`,
+          reasoningModelId,
+        );
 
-        if (result.success) {
-          if (Array.isArray(result.data)) {
-            return result.data.map((item: any) => ({
-              text: item.data,
-              source: url,
-            }));
-          }
+        if (result.success && result.data) {
           return [{ text: result.data, source: url }];
         }
         return [];
