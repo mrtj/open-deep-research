@@ -295,12 +295,16 @@ export async function POST(request: Request) {
               topic: z.string().describe('The topic or question to research'),
             }),
             execute: async ({ topic, maxDepth = 7 }) => {
+              const serperApiKey = process.env.SERPER_API_KEY;
+              if (!serperApiKey) {
+                return { error: 'SERPER_API_KEY not configured', success: false };
+              }
               const generator = runDeepResearch({
                 topic,
                 maxDepth,
                 reasoningModelId: reasoningModel.apiIdentifier,
                 firecrawlApiKey: process.env.FIRECRAWL_API_KEY || '',
-                serperApiKey: process.env.SERPER_API_KEY || '',
+                serperApiKey,
               });
 
               while (true) {
