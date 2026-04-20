@@ -4,6 +4,7 @@ import { generateText } from 'ai';
 import { customModel } from '@/lib/ai';
 
 const FETCH_TIMEOUT_MS = 15_000;
+const MAX_CONTENT_CHARS = 35_000;
 
 export interface ExtractResult {
   success: boolean;
@@ -87,7 +88,7 @@ export async function extractWithPrompt(
   try {
     const result = await generateText({
       model: customModel(modelId, true),
-      prompt: `${prompt}\n\nPage content from ${url}:\n\n${page.content}`,
+      prompt: `${prompt}\n\nPage content from ${url}:\n\n${page.content.slice(0, MAX_CONTENT_CHARS)}`,
     });
 
     return { success: true, data: result.text };
