@@ -160,7 +160,7 @@ Note: non-streaming mode includes a `sources` array (collected from all discover
 |--------|-------|
 | 400 | Missing `topic`, invalid JSON, `maxDepth` out of range |
 | 401 | Missing or invalid `Authorization` header |
-| 500 | `API_KEY` or `FIRECRAWL_API_KEY` not configured, provider error |
+| 500 | `API_KEY`, `FIRECRAWL_API_KEY`, or `SERPER_API_KEY` not configured, provider error |
 
 All errors return JSON:
 
