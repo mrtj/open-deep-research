@@ -1,12 +1,14 @@
 import FirecrawlApp from '@mendable/firecrawl-js';
 import { generateText } from 'ai';
 import { customModel } from '@/lib/ai';
+import { serperSearch } from '@/lib/search';
 
 export interface DeepResearchParams {
   topic: string;
   maxDepth?: number;
   reasoningModelId: string;
   firecrawlApiKey: string;
+  serperApiKey: string;
 }
 
 export type DeepResearchEvent =
@@ -52,6 +54,7 @@ export async function* runDeepResearch(
     maxDepth = 7,
     reasoningModelId,
     firecrawlApiKey,
+    serperApiKey,
   } = params;
 
   let topic = initialTopic;
@@ -203,9 +206,9 @@ export async function* runDeepResearch(
       yield makeActivity('search', 'pending', `Searching for "${topic}"`);
 
       const searchTopic = researchState.nextSearchTopic || topic;
-      const searchResult = await app.search(searchTopic);
+      const searchResult = await serperSearch(searchTopic, serperApiKey);
 
-      if (!(searchResult as any).success) {
+      if (!searchResult.success) {
         yield makeActivity(
           'search',
           'error',
@@ -224,11 +227,11 @@ export async function* runDeepResearch(
       yield makeActivity(
         'search',
         'complete',
-        `Found ${(searchResult as any).data.length} relevant results`,
+        `Found ${searchResult.data.length} relevant results`,
       );
 
       // Add sources from search results
-      for (const result of (searchResult as any).data) {
+      for (const result of searchResult.data) {
         yield {
           type: 'source' as const,
           url: result.url,
@@ -238,9 +241,9 @@ export async function* runDeepResearch(
       }
 
       // Extract phase - yield a single pending/complete pair around the batch
-      const topUrls = (searchResult as any).data
+      const topUrls = searchResult.data
         .slice(0, 3)
-        .map((result: any) => result.url);
+        .map((result) => result.url);
 
       const urlsToExtract = [researchState.urlToSearch, ...topUrls].filter(
         Boolean,
