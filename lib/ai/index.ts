@@ -52,15 +52,17 @@ export const customModel = (apiIdentifier: string, forReasoning: boolean = false
   // Check which API key is available
   const hasOpenRouterKey = process.env.OPENROUTER_API_KEY && process.env.OPENROUTER_API_KEY !== "****";
 
-  // If it's for reasoning, get the appropriate reasoning model
-  const modelId = forReasoning ? getReasoningModel(apiIdentifier) : apiIdentifier;
-
+  // When using OpenRouter, pass model IDs through directly — OpenRouter accepts any model string.
+  // The getReasoningModel whitelist only applies to direct OpenAI/TogetherAI routing.
   if (hasOpenRouterKey) {
     return wrapLanguageModel({
-      model: openrouter(modelId),
+      model: openrouter(apiIdentifier),
       middleware: customMiddleware,
     });
   }
+
+  // If it's for reasoning, get the appropriate reasoning model
+  const modelId = forReasoning ? getReasoningModel(apiIdentifier) : apiIdentifier;
 
   // Select provider based on model
   const model = modelId === 'deepseek-ai/DeepSeek-R1'
