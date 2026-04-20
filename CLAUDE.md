@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Open Deep Research — an open-source AI research chatbot that uses Serper (web search) and Firecrawl (extract/scrape) with reasoning models to perform deep web research. Built on Next.js 15 App Router with React 19, Vercel AI SDK, Drizzle ORM (PostgreSQL), and NextAuth v5.
+Open Deep Research — an open-source AI research chatbot that uses Serper (web search) and Mozilla Readability (content extraction) with reasoning models to perform deep web research. Built on Next.js 15 App Router with React 19, Vercel AI SDK, Drizzle ORM (PostgreSQL), and NextAuth v5.
 
 ## Commands
 
@@ -26,7 +26,7 @@ pnpm db:push          # Push schema directly to DB (no migration file)
 - **Router model** (gpt-4o / gpt-4o-mini) handles request routing and tool orchestration
 - **Reasoning model** (configurable: o1, o3-mini, DeepSeek-R1) handles complex analysis
 - Provider priority: OpenRouter key → TogetherAI (DeepSeek) → OpenAI (default)
-- AI tools: `search` (Serper API), `extract`, `scrape` (Firecrawl), `deepResearch` (recursive, max 7 levels, 4.5min timeout)
+- AI tools: `search` (Serper API), `extract`, `scrape` (Readability + LLM), `deepResearch` (recursive, max 7 levels, 4.5min timeout)
 - Streaming via `createDataStreamResponse` from Vercel AI SDK
 
 ### Key Directories
@@ -49,7 +49,7 @@ Upstash Redis sliding window: 5 requests / 60 seconds per user.
 
 ## Environment Variables
 
-**Required:** `OPENAI_API_KEY`, `FIRECRAWL_API_KEY`, `SERPER_API_KEY`, `AUTH_SECRET`, `POSTGRES_URL`
+**Required:** `OPENAI_API_KEY`, `SERPER_API_KEY`, `AUTH_SECRET`, `POSTGRES_URL`
 
 **Optional:** `OPENROUTER_API_KEY`, `TOGETHER_API_KEY`, `BLOB_READ_WRITE_TOKEN`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
 
