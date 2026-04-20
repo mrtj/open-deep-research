@@ -8,7 +8,8 @@ Set these environment variables on the server:
 
 ```bash
 API_KEY=your-secret-key          # Bearer token for authentication
-FIRECRAWL_API_KEY=fc-...         # Firecrawl API key for search/extraction
+FIRECRAWL_API_KEY=fc-...         # Firecrawl API key for page extraction
+SERPER_API_KEY=...               # Serper API key for web search
 OPENAI_API_KEY=sk-...            # Required if using OpenAI models
 OPENROUTER_API_KEY=sk-or-...     # Optional: routes all models through OpenRouter
 REASONING_MODEL=o1-mini          # Optional: default reasoning model (fallback: o1-mini)
