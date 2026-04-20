@@ -26,7 +26,7 @@ pnpm db:push          # Push schema directly to DB (no migration file)
 - **Router model** (gpt-4o / gpt-4o-mini) handles request routing and tool orchestration
 - **Reasoning model** (configurable: o1, o3-mini, DeepSeek-R1) handles complex analysis
 - Provider priority: OpenRouter key → TogetherAI (DeepSeek) → OpenAI (default)
-- AI tools: `search` (Serper API), `extract`, `scrape` (Readability + LLM), `deepResearch` (recursive, max 7 levels, 4.5min timeout)
+- AI tools: `search` (Serper API), `extract` (Readability + LLM), `scrape` (Readability), `deepResearch` (recursive, max 7 levels, 4.5min timeout)
 - Streaming via `createDataStreamResponse` from Vercel AI SDK
 
 ### Key Directories
